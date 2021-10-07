@@ -15,84 +15,101 @@ class EdgeAlreadyTaken(Exception):
     pass
 
 class Board:
-    def __init__(self, x_dimension=5, y_dimension=4):
-        self._x_dimension = x_dimension
-        self._y_dimension = y_dimension
+    def __init__(self, x_dimension=4, y_dimension=5):
+        self._rows = y_dimension
+        self._cols = x_dimension
         self._edges_remaining = 2 * x_dimension * y_dimension + x_dimension + y_dimension
-        self._x_bound = x_dimension * 2
-        self._y_bound = y_dimension * 2
-        self.board = [[False for i in range(self._y_bound + 1)] for i in range(self._x_bound + 1)]
+        self._row_bound = y_dimension * 2
+        self._col_bound = x_dimension * 2
+        self.board = [[False for i in range(self._col_bound + 1)] for i in range(self._row_bound + 1)]
 
-    def move(self, x_coor, y_coor, user):
-        if self._edge_is_out_of_bounds(x_coor, y_coor):
-            print(f"({x_coor}, {y_coor}) is out of the x-bound {self._x_bound} and/or y-bound {self._y_bound}.")
+    def move(self, row, col, user):
+        if self._edge_is_out_of_bounds(row, col):
+            print(f"({row}, {col}) is out of the x-bound {self._row_bound} and/or y-bound {self._col_bound}.")
             raise OutOfBounds()
-        x_coor_is_even = x_coor % 2 == 0
-        y_coor_is_even = y_coor % 2 == 0
+        row_is_even = row % 2 == 0
+        col_is_even = col % 2 == 0
         # parity of coordinates must be different for valid edge
-        if x_coor_is_even == y_coor_is_even:
-            print(f"({x_coor}, {y_coor}) is an invalid coordinate. x and y must have opposite parity.")
+        if row_is_even == col_is_even:
+            print(f"({row}, {col}) is an invalid coordinate. x and y must have opposite parity.")
             raise InvalidCoordinate()
-        if self.board[x_coor][y_coor]:
-            print(f"({x_coor}, {y_coor}) is an invalid coordinate. The edge is already taken.")
+        if self.board[row][col]:
+            print(f"({row}, {col}) is an invalid coordinate. The edge is already taken.")
             raise EdgeAlreadyTaken()
 
-        self._fill_edge(x_coor, y_coor)
+        self._fill_edge(row, col)
         # horizontal edge filled
-        if x_coor_is_even and not y_coor_is_even:
+        if row_is_even and not col_is_even:
             # check top box
-            top_box_x_coor, top_box_y_coor = x_coor - 2, y_coor - 1
-            if (not self._box_is_out_of_bounds(top_box_x_coor, top_box_y_coor) 
-                and self._is_box_full(top_box_x_coor , top_box_y_coor)):
-                self._assign_box(top_box_x_coor , top_box_y_coor, user)
+            top_box_row, top_box_col = row - 2, col - 1
+            if (not self._box_is_out_of_bounds(top_box_row, top_box_col) 
+                and self._is_box_full(top_box_row , top_box_col)):
+                self._assign_box(top_box_row , top_box_col, user)
             # check bottom box
-            bottom_box_x_coor, bottom_box_y_coor = x_coor, y_coor - 1
-            if (not self._box_is_out_of_bounds(bottom_box_x_coor, bottom_box_y_coor)
-                and self._is_box_full(bottom_box_x_coor , bottom_box_y_coor)):
-                self._assign_box(bottom_box_x_coor , bottom_box_y_coor, user)
+            bottom_box_row, bottom_box_col = row, col - 1
+            if (not self._box_is_out_of_bounds(bottom_box_row, bottom_box_col)
+                and self._is_box_full(bottom_box_row , bottom_box_col)):
+                self._assign_box(bottom_box_row , bottom_box_col, user)
         # vertical edge filled
         else:
             # check left box
-            left_box_x_coor, left_box_y_coor = x_coor - 1, y_coor - 2
-            if (not self._box_is_out_of_bounds(left_box_x_coor, left_box_y_coor)
-                and self._is_box_full(left_box_x_coor , left_box_y_coor)):
-                self._assign_box(left_box_x_coor , left_box_y_coor, user)
+            left_box_row, left_box_col = row - 1, col - 2
+            if (not self._box_is_out_of_bounds(left_box_row, left_box_col)
+                and self._is_box_full(left_box_row , left_box_col)):
+                self._assign_box(left_box_row , left_box_col, user)
             # check right box
-            right_box_x_coor, right_box_y_coor = x_coor - 1, y_coor
-            if (not self._box_is_out_of_bounds(right_box_x_coor, right_box_y_coor)
-                and self._is_box_full(right_box_x_coor , right_box_y_coor)):
-                self._assign_box(right_box_x_coor , right_box_y_coor, user)
+            right_box_row, right_box_col = row - 1, col
+            if (not self._box_is_out_of_bounds(right_box_row, right_box_col)
+                and self._is_box_full(right_box_row , right_box_col)):
+                self._assign_box(right_box_row , right_box_col, user)
 
     def game_over(self):
         return self._edges_remaining <= 0
+
+    @property
+    def rows(self):
+        return self._rows
+
+    @property
+    def columns(self):
+        return self._cols
+
+    @property
+    def row_bound(self):
+        return self._row_bound
+
+    @property
+    def column_bound(self):
+        return self._col_bound
     
     """
     Assumes the coordinate is a valid edge
     """
-    def _fill_edge(self, x_coor, y_coor):
-        self.board[x_coor][y_coor] = True
+    def _fill_edge(self, row, col):
+        self.board[row][col] = True
         self._edges_remaining -= 1
 
     """
     Assigns box to a player. Assumes (x_coor, y_coor) is top left coordinate of box and the box edges are filled.
     """
-    def _assign_box(self, x_coor, y_coor, user):
-        self.board[x_coor][y_coor] = user
+    def _assign_box(self, row, col, user):
+        if user:
+            self.board[row][col] = True
+        else:
+            self.board[row + 1][col + 1] = True
 
     """
     Checks if a box is full. The box being checked has the top left dot at (x_coor, y_coor).
     """
-    def _is_box_full(self, x_coor, y_coor):
-        return (self.board[x_coor][y_coor + 1] and self.board[x_coor + 2][y_coor + 1]
-            and self.board[x_coor + 1][y_coor] and self.board[x_coor + 1][y_coor + 2])
+    def _is_box_full(self, row, col):
+        return (self.board[row][col + 1] and self.board[row + 2][col + 1]
+            and self.board[row + 1][col] and self.board[row + 1][col + 2])
         
-    def _edge_is_out_of_bounds(self, x_coor, y_coor):
-        return x_coor < 0 or x_coor > self._x_bound or y_coor < 0 or y_coor > self._y_bound
+    def _edge_is_out_of_bounds(self, row, col):
+        return row < 0 or row > self._row_bound or col < 0 or col > self._col_bound
 
-    def _box_is_out_of_bounds(self, x_coor, y_coor):
-        return x_coor < 0 or x_coor > (self._x_bound - 2) or y_coor < 0 or y_coor > (self._y_bound - 2)
-
-
+    def _box_is_out_of_bounds(self, row, col):
+        return row < 0 or row > (self._row_bound - 2) or col < 0 or col > (self._col_bound - 2)
 
 class TestBoard(unittest.TestCase):
     def test_move_invalid(self):
@@ -116,7 +133,7 @@ class TestBoard(unittest.TestCase):
 
     def test_move_valid(self):
         def one_box_filled_with_vertical_edge():
-            board = Board(2, 3)
+            board = Board(3, 2)
             board.move(0, 1, True)
             board.move(2, 1, True)
             board.move(1, 2, True)
@@ -126,7 +143,7 @@ class TestBoard(unittest.TestCase):
             self.assertTrue(board.board[0][0])
             self.assertFalse(board.board[0][2])
         def two_boxes_filled_with_vertical_edge():
-            board = Board(2, 3)
+            board = Board(3, 2)
             board.move(0, 3, True)
             board.move(0, 5, True)
             board.move(2, 3, True)
@@ -139,26 +156,32 @@ class TestBoard(unittest.TestCase):
             self.assertTrue(board.board[0][2])
             self.assertTrue(board.board[0][4])
         def one_box_filled_with_horizontal_edge():
-            board = Board(2, 3)
-            board.move(3, 0, True)
-            board.move(3, 2, True)
-            board.move(2, 1, True)
+            board = Board(3, 2)
+            board.move(3, 0, False)
+            board.move(3, 2, False)
+            board.move(2, 1, False)
             self.assertFalse(board.board[2][0])
-            board.move(4, 1, True)
-            self.assertTrue(board.board[2][0])
+            self.assertFalse(board.board[3][1])
+            board.move(4, 1, False)
+            self.assertFalse(board.board[2][0])
+            self.assertTrue(board.board[3][1])
         def two_boxes_filled_with_horizontal_edge():
             board = Board()
-            board.move(1, 0, True)
-            board.move(3, 0, True)
-            board.move(1, 2, True)
-            board.move(3, 2, True)
-            board.move(0, 1, True)
-            board.move(4, 1, True)
+            board.move(1, 0, False)
+            board.move(3, 0, False)
+            board.move(1, 2, False)
+            board.move(3, 2, False)
+            board.move(0, 1, False)
+            board.move(4, 1, False)
+            self.assertFalse(board.board[0][0])
+            self.assertFalse(board.board[1][1])
+            self.assertFalse(board.board[2][0])
+            self.assertFalse(board.board[3][1])
+            board.move(2, 1, False)
             self.assertFalse(board.board[0][0])
             self.assertFalse(board.board[2][0])
-            board.move(2, 1, True)
-            self.assertTrue(board.board[0][0])
-            self.assertTrue(board.board[2][0])
+            self.assertTrue(board.board[1][1])
+            self.assertTrue(board.board[3][1])
         one_box_filled_with_vertical_edge()
         two_boxes_filled_with_vertical_edge()
         one_box_filled_with_horizontal_edge()
