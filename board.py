@@ -18,6 +18,7 @@ class Board:
     def __init__(self, x_dimension=5, y_dimension=4):
         self._x_dimension = x_dimension
         self._y_dimension = y_dimension
+        self._edges_remaining = 2 * x_dimension * y_dimension + x_dimension + y_dimension
         self._x_bound = x_dimension * 2
         self._y_bound = y_dimension * 2
         self.board = [[False for i in range(self._y_bound + 1)] for i in range(self._x_bound + 1)]
@@ -61,12 +62,16 @@ class Board:
             if (not self._box_is_out_of_bounds(right_box_x_coor, right_box_y_coor)
                 and self._is_box_full(right_box_x_coor , right_box_y_coor)):
                 self._assign_box(right_box_x_coor , right_box_y_coor, user)
+
+    def game_over(self):
+        return self._edges_remaining <= 0
     
     """
     Assumes the coordinate is a valid edge
     """
     def _fill_edge(self, x_coor, y_coor):
         self.board[x_coor][y_coor] = True
+        self._edges_remaining -= 1
 
     """
     Assigns box to a player. Assumes (x_coor, y_coor) is top left coordinate of box and the box edges are filled.
@@ -158,6 +163,16 @@ class TestBoard(unittest.TestCase):
         two_boxes_filled_with_vertical_edge()
         one_box_filled_with_horizontal_edge()
         two_boxes_filled_with_horizontal_edge()
+    
+    def test_game_over(self):
+        board = Board(1, 1)
+        self.assertFalse(board.game_over())
+        board.move(1, 0, True)
+        board.move(1, 2, True)
+        board.move(0, 1, True)
+        self.assertFalse(board.game_over())
+        board.move(2, 1, True)
+        self.assertTrue(board.game_over())
 
 if __name__ == "__main__":
     unittest.main()
