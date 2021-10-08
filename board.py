@@ -22,6 +22,8 @@ class Board:
         self._row_bound = y_dimension * 2
         self._col_bound = x_dimension * 2
         self.board = [[False for i in range(self._col_bound + 1)] for i in range(self._row_bound + 1)]
+        self._player_one_score = 0
+        self._player_two_score = 0
 
     def move(self, row, col, is_player_one):
         if self.edge_is_out_of_bounds(row, col):
@@ -81,6 +83,38 @@ class Board:
     def game_over(self):
         return self._edges_remaining <= 0
 
+    """
+    Pre: (row, col) is a valid edge
+    """
+    def revert_move(self, row, col):
+        # remove edge
+        self.board[row][col] = False
+
+        # remove corresponding boxes
+        row_is_even = row % 2 == 0
+        col_is_even = col % 2 == 0
+        # horizontal edge removed
+        if row_is_even and not col_is_even:
+            # check top box
+            top_box_row, top_box_col = row - 2, col - 1
+            if not self._box_is_out_of_bounds(top_box_row, top_box_col):
+                self._unassign_box(top_box_row, top_box_col)
+            # check bottom box
+            bottom_box_row, bottom_box_col = row, col - 1
+            if not self._box_is_out_of_bounds(bottom_box_row, bottom_box_col):
+                self._unassign_box(bottom_box_row, bottom_box_col)
+        # vertical edge removed
+        else:
+            # check left box
+            left_box_row, left_box_col = row - 1, col - 2
+            if not self._box_is_out_of_bounds(left_box_row, left_box_col):
+                self._unassign_box(left_box_row, left_box_col)
+            # check right box
+            right_box_row, right_box_col = row - 1, col
+            if not self._box_is_out_of_bounds(right_box_row, right_box_col):
+                self._unassign_box(right_box_row, right_box_col)
+
+
     @property
     def rows(self):
         return self._rows
@@ -96,6 +130,14 @@ class Board:
     @property
     def column_bound(self):
         return self._col_bound
+
+    @property
+    def player_one_score(self):
+        return self._player_one_score
+
+    @property
+    def player_two_score(self):
+        return self._player_two_score
     
     """
     Assumes the coordinate is a valid edge
@@ -106,12 +148,29 @@ class Board:
 
     """
     Assigns box to a player. Assumes (x_coor, y_coor) is top left coordinate of box and the box edges are filled.
+    Updates player scores.
     """
     def _assign_box(self, row, col, is_player_one):
         if is_player_one:
             self.board[row][col] = True
+            self._player_one_score += 1
         else:
             self.board[row + 1][col + 1] = True
+            self._player_two_score += 1
+
+    """
+    Unassign a box. The box may or may not have been assigned already.
+    Updates player scores
+    """
+    def _unassign_box(self, row, col):
+        # player one won the box
+        if self.board[row][col]:
+            self.board[row][col] = False
+            self._player_one_score -= 1
+        # player two won the box
+        if self.board[row + 1][col + 1]:
+            self.board[row + 1][col + 1] = False
+            self._player_two_score -= 1
 
     """
     Checks if a box is full. The box being checked has the top left dot at (x_coor, y_coor).
@@ -127,6 +186,9 @@ class Board:
         return row < 0 or row > (self._row_bound - 2) or col < 0 or col > (self._col_bound - 2)
 
 class TestBoard(unittest.TestCase):
+    """
+    May need to re-evaluate this after redeisgn
+    """
     def test_move_invalid(self):
         board = Board()
         def out_of_bounds():
@@ -146,6 +208,9 @@ class TestBoard(unittest.TestCase):
         equal_parity()
         edge_already_taken()
 
+    """
+    May need to re-evaluate this after redeisgn
+    """
     def test_move_valid(self):
         def one_box_filled_with_vertical_edge():
             board = Board(3, 2)
@@ -202,6 +267,9 @@ class TestBoard(unittest.TestCase):
         one_box_filled_with_horizontal_edge()
         two_boxes_filled_with_horizontal_edge()
     
+    """
+    May need to re-evaluate this after redeisgn
+    """
     def test_game_over(self):
         board = Board(1, 1)
         self.assertFalse(board.game_over())
@@ -211,6 +279,80 @@ class TestBoard(unittest.TestCase):
         self.assertFalse(board.game_over())
         board.move(2, 1, True)
         self.assertTrue(board.game_over())
+
+    def test_revert_move(self):
+        def revert_one_box():
+            board = Board(3, 2)
+            board.move(0, 1, True)
+            board.move(2, 1, True)
+            board.move(1, 2, True)
+            board.move(1, 0, True)
+            self.assertTrue(board.board[0][0])
+            self.assertFalse(board.board[1][1])
+            self.assertEqual(1, board.player_one_score)
+            self.assertEqual(0, board.player_two_score)
+            board.revert_move(0, 1)
+            self.assertFalse(board.board[0][0])
+            self.assertFalse(board.board[1][1])
+            self.assertEqual(0, board.player_one_score)
+            self.assertEqual(0, board.player_two_score)
+            board.move(0, 1, False)
+            self.assertFalse(board.board[0][0])
+            self.assertTrue(board.board[1][1])
+            self.assertEqual(0, board.player_one_score)
+            self.assertEqual(1, board.player_two_score)
+            board.revert_move(1, 0)
+            self.assertFalse(board.board[0][0])
+            self.assertFalse(board.board[1][1])
+            self.assertEqual(0, board.player_one_score)
+            self.assertEqual(0, board.player_two_score)
+        def revert_two_horizontal_boxes():
+            board = Board(3, 2)
+            board.move(0, 3, True)
+            board.move(0, 5, True)
+            board.move(2, 3, True)
+            board.move(2, 5, True)
+            board.move(1, 2, True)
+            board.move(1, 4, True)
+            board.move(1, 6, True)
+            self.assertTrue(board.board[0][2])
+            self.assertFalse(board.board[1][3])
+            self.assertTrue(board.board[0][4])
+            self.assertFalse(board.board[1][5])
+            self.assertEqual(2, board.player_one_score)
+            self.assertEqual(0, board.player_two_score)
+            board.revert_move(1, 4)
+            self.assertFalse(board.board[0][2])
+            self.assertFalse(board.board[1][3])
+            self.assertFalse(board.board[0][4])
+            self.assertFalse(board.board[1][5])
+            self.assertEqual(0, board.player_one_score)
+            self.assertEqual(0, board.player_two_score)
+        def revert_two_vertical_boxes():
+            board = Board()
+            board.move(1, 0, False)
+            board.move(3, 0, False)
+            board.move(1, 2, False)
+            board.move(3, 2, False)
+            board.move(0, 1, False)
+            board.move(2, 1, False)
+            board.move(4, 1, False)
+            self.assertFalse(board.board[0][0])
+            self.assertTrue(board.board[1][1])
+            self.assertFalse(board.board[2][0])
+            self.assertTrue(board.board[3][1])
+            self.assertEqual(0, board.player_one_score)
+            self.assertEqual(2, board.player_two_score)
+            board.revert_move(2, 1)
+            self.assertFalse(board.board[0][0])
+            self.assertFalse(board.board[1][1])
+            self.assertFalse(board.board[2][0])
+            self.assertFalse(board.board[3][1])
+            self.assertEqual(0, board.player_one_score)
+            self.assertEqual(0, board.player_two_score)
+        revert_one_box()
+        revert_two_horizontal_boxes()
+        revert_two_vertical_boxes()
 
 if __name__ == "__main__":
     unittest.main()
