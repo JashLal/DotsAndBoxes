@@ -5,10 +5,17 @@ from board import Board
 class Gui:
     OFFSET_X = 2
     OFFSET_Y = 2
+    YELLOW_BLACK = 1
+    BLUE_BLACK = 2
+    BLACK_RED = 3
 
     def __init__(self, backend):
         self.stdscr = curses.initscr()
         curses.noecho()
+        curses.start_color()
+        curses.init_pair(self.YELLOW_BLACK, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+        curses.init_pair(self.BLUE_BLACK, curses.COLOR_BLUE, curses.COLOR_BLACK)
+        curses.init_pair(self.BLACK_RED, curses.COLOR_BLACK, curses.COLOR_RED)
         self.stdscr.keypad(True)
         self.stdscr.clear()
         self.backend = backend
@@ -31,13 +38,13 @@ class Gui:
                 elif not row_is_even and not col_is_even and self.backend.board[i][j]:
                     self._draw_box(i - 1, j - 1, False)
 
-    def move(self):
+    def move(self, is_player_one):
         row, col = 1, 0
         c = None
         # check compatibility in windows
         while not c == ord("\n") or self.backend.edge_taken(row, col):
             self._draw_board()
-            self._draw_line(row, col)
+            self._draw_line(row, col, self._determine_color(is_player_one))
             c = self.stdscr.getch()
 
             temp_row, temp_col = row, col
@@ -73,25 +80,29 @@ class Gui:
 
             self.stdscr.clear()
 
-        self.backend.move(row, col, True)
+        box_drawn = self.backend.move(row, col, is_player_one)
         self._draw_board()
+        return box_drawn
 
     def _draw_dot(self, row, col):
         self.stdscr.addstr(self.OFFSET_Y + row, self.OFFSET_X + col * 2, "o")
 
-    def _draw_line(self, row, col):
+    def _draw_line(self, row, col, color=0):
         row_is_even = row % 2 == 0
         # assuming coordinates are valid horizontal or vertical edges
         if row_is_even:
-            self._draw_horizontal(row, col)
+            self._draw_horizontal(row, col, color)
         else:
-            self._draw_vertical(row, col)
+            self._draw_vertical(row, col, color)
 
-    def _draw_horizontal(self, row, col):
-        self.stdscr.addstr(self.OFFSET_Y + row, self.OFFSET_X + (col // 2) * 4 + 1, "---")
+    def _draw_horizontal(self, row, col, color=0):
+        self.stdscr.addstr(self.OFFSET_Y + row, self.OFFSET_X + (col // 2) * 4 + 1, "---", curses.color_pair(color))
 
-    def _draw_vertical(self, row, col):
-        self.stdscr.addstr(self.OFFSET_Y + row, self.OFFSET_X + col * 2, "|")
+    def _draw_vertical(self, row, col, color=0):
+        self.stdscr.addstr(self.OFFSET_Y + row, self.OFFSET_X + col * 2, "|", curses.color_pair(color))
 
-    def _draw_box(self, row, col, user):
-        self.stdscr.addstr(self.OFFSET_Y + row + 1, self.OFFSET_X + col * 2 + 2, "U" if user else "C")
+    def _draw_box(self, row, col, is_player_one):
+        self.stdscr.addstr(self.OFFSET_Y + row + 1, self.OFFSET_X + col * 2 + 2, "U" if is_player_one else "C", curses.color_pair(self._determine_color(is_player_one)))
+
+    def _determine_color(self, is_player_one):
+        return self.YELLOW_BLACK if is_player_one else self.BLUE_BLACK

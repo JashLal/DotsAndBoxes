@@ -23,7 +23,7 @@ class Board:
         self._col_bound = x_dimension * 2
         self.board = [[False for i in range(self._col_bound + 1)] for i in range(self._row_bound + 1)]
 
-    def move(self, row, col, user):
+    def move(self, row, col, is_player_one):
         if self.edge_is_out_of_bounds(row, col):
             print(f"({row}, {col}) is out of the x-bound {self._row_bound} and/or y-bound {self._col_bound}.")
             raise OutOfBounds()
@@ -38,30 +38,37 @@ class Board:
             raise EdgeAlreadyTaken()
 
         self._fill_edge(row, col)
+        # whether the move filled a box
+        box_taken = False
         # horizontal edge filled
         if row_is_even and not col_is_even:
             # check top box
             top_box_row, top_box_col = row - 2, col - 1
             if (not self._box_is_out_of_bounds(top_box_row, top_box_col) 
                 and self._is_box_full(top_box_row , top_box_col)):
-                self._assign_box(top_box_row , top_box_col, user)
+                box_taken = True
+                self._assign_box(top_box_row , top_box_col, is_player_one)
             # check bottom box
             bottom_box_row, bottom_box_col = row, col - 1
             if (not self._box_is_out_of_bounds(bottom_box_row, bottom_box_col)
                 and self._is_box_full(bottom_box_row , bottom_box_col)):
-                self._assign_box(bottom_box_row , bottom_box_col, user)
+                box_taken = True
+                self._assign_box(bottom_box_row , bottom_box_col, is_player_one)
         # vertical edge filled
         else:
             # check left box
             left_box_row, left_box_col = row - 1, col - 2
             if (not self._box_is_out_of_bounds(left_box_row, left_box_col)
                 and self._is_box_full(left_box_row , left_box_col)):
-                self._assign_box(left_box_row , left_box_col, user)
+                box_taken = True
+                self._assign_box(left_box_row , left_box_col, is_player_one)
             # check right box
             right_box_row, right_box_col = row - 1, col
             if (not self._box_is_out_of_bounds(right_box_row, right_box_col)
                 and self._is_box_full(right_box_row , right_box_col)):
-                self._assign_box(right_box_row , right_box_col, user)
+                box_taken = True
+                self._assign_box(right_box_row , right_box_col, is_player_one)
+        return box_taken
 
     def is_edge(self, row, col):
         row_is_even = row % 2 == 0
@@ -100,8 +107,8 @@ class Board:
     """
     Assigns box to a player. Assumes (x_coor, y_coor) is top left coordinate of box and the box edges are filled.
     """
-    def _assign_box(self, row, col, user):
-        if user:
+    def _assign_box(self, row, col, is_player_one):
+        if is_player_one:
             self.board[row][col] = True
         else:
             self.board[row + 1][col + 1] = True
