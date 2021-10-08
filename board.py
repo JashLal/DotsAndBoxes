@@ -24,7 +24,7 @@ class Board:
         self.board = [[False for i in range(self._col_bound + 1)] for i in range(self._row_bound + 1)]
 
     def move(self, row, col, user):
-        if self._edge_is_out_of_bounds(row, col):
+        if self.edge_is_out_of_bounds(row, col):
             print(f"({row}, {col}) is out of the x-bound {self._row_bound} and/or y-bound {self._col_bound}.")
             raise OutOfBounds()
         row_is_even = row % 2 == 0
@@ -62,6 +62,14 @@ class Board:
             if (not self._box_is_out_of_bounds(right_box_row, right_box_col)
                 and self._is_box_full(right_box_row , right_box_col)):
                 self._assign_box(right_box_row , right_box_col, user)
+
+    def is_edge(self, row, col):
+        row_is_even = row % 2 == 0
+        col_is_even = col % 2 == 0
+        return not row_is_even == col_is_even
+
+    def edge_taken(self, row, col):
+        return self.board[row][col]
 
     def game_over(self):
         return self._edges_remaining <= 0
@@ -105,7 +113,7 @@ class Board:
         return (self.board[row][col + 1] and self.board[row + 2][col + 1]
             and self.board[row + 1][col] and self.board[row + 1][col + 2])
         
-    def _edge_is_out_of_bounds(self, row, col):
+    def edge_is_out_of_bounds(self, row, col):
         return row < 0 or row > self._row_bound or col < 0 or col > self._col_bound
 
     def _box_is_out_of_bounds(self, row, col):
