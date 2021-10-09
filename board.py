@@ -87,8 +87,7 @@ class Board:
     Pre: (row, col) is a valid edge
     """
     def revert_move(self, row, col):
-        # remove edge
-        self.board[row][col] = False
+        self._unfill_edge(row, col)
 
         # remove corresponding boxes
         row_is_even = row % 2 == 0
@@ -145,6 +144,13 @@ class Board:
     def _fill_edge(self, row, col):
         self.board[row][col] = True
         self._edges_remaining -= 1
+
+    """
+    Assumes the coordinate is a valid edge
+    """
+    def _unfill_edge(self, row, col):
+        self.board[row][col] = False
+        self._edges_remaining += 1
 
     """
     Assigns box to a player. Assumes (x_coor, y_coor) is top left coordinate of box and the box edges are filled.
