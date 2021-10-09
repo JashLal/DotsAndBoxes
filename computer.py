@@ -17,8 +17,9 @@ class Computer:
                     col_is_even = col % 2 == 0
                     # unfilled edge
                     if not row_is_even == col_is_even and not self.backend.edge_taken(row, col):
-                        self.backend.move(row, col, maximizer)
-                        move_advantage = self._min_max(depth - 1, not maximizer)
+                        same_turn = self.backend.move(row, col, maximizer)
+                        # box aquired --> maximizer; else --> minimizer
+                        move_advantage = self._min_max(depth - 1, same_turn)
                         max_advantage = max(max_advantage, move_advantage)
                         # return to original state
                         self.backend.revert_move(row, col)
@@ -31,8 +32,9 @@ class Computer:
                     row_is_even = row % 2 == 0
                     col_is_even = col % 2 == 0
                     if not row_is_even == col_is_even and not self.backend.edge_taken(row, col):
-                        self.backend.move(row, col, maximizer)
-                        move_advantage = self._min_max(depth - 1, not maximizer)
+                        same_turn = self.backend.move(row, col, maximizer)
+                        # box aquired --> minimizer; else --> maximizer
+                        move_advantage = self._min_max(depth - 1, not same_turn)
                         min_advantage = min(min_advantage, move_advantage)
                         # return to original state
                         self.backend.revert_move(row, col)
