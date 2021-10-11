@@ -31,8 +31,6 @@ For each box (row, col) in the graph representation, the matrix representation d
 (2 * row + 2, 2 * col) --> Right edge taken
 """
 
-import unittest
-
 class Board:
     """Stores the state and handles its manipulation."""
     def __init__(self, cols=4, rows=5):

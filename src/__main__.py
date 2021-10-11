@@ -3,9 +3,9 @@
 Handles the Dots and Boxes game. Supports multiplayer and singleplayer.
 """
 
-from board import Board
-from gui import Gui
-from computer import Computer
+from .board import Board
+from .gui import Gui
+from .computer import Computer
 import curses
 import argparse
 
