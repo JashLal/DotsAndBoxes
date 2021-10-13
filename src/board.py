@@ -167,6 +167,11 @@ class Board:
     def player_two_score(self):
         """Player two's score"""
         return self._player_two_score
+
+    @property
+    def edges_remaining(self):
+        """Edges remaining"""
+        return self._edges_remaining
     
     def _fill_edge(self, row, col):
         self.board[row][col] = True
